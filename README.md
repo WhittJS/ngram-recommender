@@ -17,3 +17,9 @@ What do we need :)
 7. Training data -> pick the best model
 8. Test -> perplexity
 9. Show an Example
+
+Deliverable in GitHub
+1. Code
+2. 1page pdf
+3. data
+4. additional is ok
