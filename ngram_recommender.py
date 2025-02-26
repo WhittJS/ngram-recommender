@@ -202,7 +202,9 @@ if __name__ == "__main__":
 
     # compare ngram models
     n_choice_perplexity = {}
-    for n_choice in range(3, 14):
+    max_ngram = 16  # edit this value
+
+    for n_choice in range(3, max_ngram):
         the_xgrammys4 = {}
         the_xgrams4(n_choice)
         n_choice_perplexity[n_choice] = perplexity(n_choice)
