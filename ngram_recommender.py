@@ -16,12 +16,12 @@ def remove_duplicates(data):
     """Remove duplicate methods based on method content.
       Almost Type-1 with the exception of comments
     """
-    return data.drop_duplicates(subset="Method Java", keep="first")
+    return data.drop_duplicates(subset="Method Code", keep="first")
 
 
 def filter_ascii_methods(data):
     """Filter methods to include only those with ASCII characters."""
-    data = data[data["Method Java"].apply(lambda x: all(ord(char) < 128 for char in x))]
+    data = data[data["Method Code"].apply(lambda x: all(ord(char) < 128 for char in x))]
     return data
 
 # Three Approaches:
@@ -32,7 +32,7 @@ def filter_ascii_methods(data):
 
 def remove_outliers(data, lower_percentile=5, upper_percentile=95):
     """Remove outliers based on method length."""
-    method_lengths = data["Method Java"].apply(len)
+    method_lengths = data["Method Code"].apply(len)
     lower_bound = method_lengths.quantile(lower_percentile / 100)
     upper_bound = method_lengths.quantile(upper_percentile / 100)
     return data[(method_lengths >= lower_bound) & (method_lengths <= upper_bound)]
@@ -45,7 +45,7 @@ def remove_boilerplate_methods(data):
         r"\bget[A-Z][a-zA-Z0-9_]*\(.*\)\s*{",  # Getter methods
     ]
     boilerplate_regex = re.compile("|".join(boilerplate_patterns))
-    data = data[~data["Method Java"].apply(lambda x: bool(boilerplate_regex.search(x)))]
+    data = data[~data["Method Code"].apply(lambda x: bool(boilerplate_regex.search(x)))]
     return data
 
 
@@ -71,7 +71,7 @@ def remove_comments_from_dataframe(df: pd.DataFrame, method_column: str, languag
         return clean_code
 
     # Apply the function to the specified column and add a new column with the results
-    df["Method Java No Comments"] = df[method_column].apply(remove_comments)
+    df["Method Code No Comments"] = df[method_column].apply(remove_comments)
     return df
 
 
@@ -88,27 +88,27 @@ print("After removing outliers:", len(df))
 df = remove_boilerplate_methods(df)
 print("After removing boilerplate methods:", len(df))
 
-df = remove_comments_from_dataframe(df, "Method Java", "Java")
+df = remove_comments_from_dataframe(df, "Method Code", "Java")
 print("After cleaning comments:", len(df))
 
-print(df["Method Java Formatted"])
-methods = df["Method Java Formatted"]
+print(df["Method Code"])
+methods = df["Method Code"]
 
 sentences = []
 for method in methods:
     lexer = JavaLexer()
 
     tokens = ['<s>'] + [t[1] for t in lexer.get_tokens(method) if ' ' not in t[1]] + ['</s>']
-    print(tokens)
-    print(len(tokens))
+    # print(tokens)
+    # print(len(tokens))
     sentences.append(tokens)
-print(sentences)
+# print(sentences)
 
 
 def the_xgrams4(n_choice):
     for sentence in train_sentences:
         words = [word for word in sentence]
-        for ix in range(n_choice-1,len(words)):
+        for ix in range(n_choice-1, len(words)):
             try:
                 temp_list = []
 
@@ -138,7 +138,7 @@ def find_most_prob_word(token_list):
     list_key = tuple(token_list)
     try:
         possible_words = the_xgrammys4[list_key]
-        print(possible_words)
+        # print(possible_words)
         c = Counter(possible_words)
         sum = c.total()
         most_common_word = c.most_common(1)
@@ -202,9 +202,9 @@ if __name__ == "__main__":
 
     # compare ngram models
     n_choice_perplexity = {}
-    for n_choice in range(3, 20):
+    for n_choice in range(3, 14):
         the_xgrammys4 = {}
         the_xgrams4(n_choice)
         n_choice_perplexity[n_choice] = perplexity(n_choice)
         print(f"For {n_choice}-gram model, the perplexity is {n_choice_perplexity[n_choice]}")
-        print(f"The best performing model is the {min(n_choice_perplexity, key=n_choice_perplexity.get)}-gram model with a {min(n_choice_perplexity.values())} perplexity")
+    print(f"The best performing model is the {min(n_choice_perplexity, key=n_choice_perplexity.get)}-gram model with a {min(n_choice_perplexity.values())} perplexity")
