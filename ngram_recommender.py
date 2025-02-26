@@ -217,4 +217,4 @@ if __name__ == "__main__":
     print(f"The best performing model is the {best_performer}-gram model with a {min(n_choice_perplexity.values())} perplexity")
     print("Validating best-perfoming model...")
     the_xgrams4(best_performer)
-    print(f"For best-performing model, the perplexity was validated at {perplexity(val_sentences, best_performer)}")
+    print(f"For best-performing model ({best_performer}-gram), the perplexity was validated at {perplexity(val_sentences, best_performer)}")
