@@ -129,7 +129,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         folder_name += sys.argv[2]
 
-    if not os.path.exists():
+    if not os.path.exists(input_csv):
         print('Invalid Input csv filename! :(')
         sys.exit()
 
