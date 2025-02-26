@@ -9,9 +9,6 @@ import math
 from tqdm import tqdm
 
 
-df = pd.read_csv("final_merge.csv")
-
-
 # Type 1 Clones #
 def remove_duplicates(data):
     """Remove duplicate methods based on method content.
@@ -74,36 +71,6 @@ def remove_comments_from_dataframe(df: pd.DataFrame, method_column: str, languag
     # Apply the function to the specified column and add a new column with the results
     df["Method Code No Comments"] = df[method_column].apply(remove_comments)
     return df
-
-
-print("Initial dataset size:", len(df))
-df = remove_duplicates(df)
-print("After removing duplicates:", len(df))
-
-df = filter_ascii_methods(df)
-print("After filtering ASCII methods:", len(df))
-
-df = remove_outliers(df)
-print("After removing outliers:", len(df))
-
-df = remove_boilerplate_methods(df)
-print("After removing boilerplate methods:", len(df))
-
-df = remove_comments_from_dataframe(df, "Method Code", "Java")
-print("After cleaning comments:", len(df))
-
-# print(df["Method Code"])
-methods = df["Method Code"]
-
-sentences = []
-for method in methods:
-    lexer = JavaLexer()
-
-    tokens = ['<s>'] + [t[1] for t in lexer.get_tokens(method) if ' ' not in t[1]] + ['</s>']
-    # print(tokens)
-    # print(len(tokens))
-    sentences.append(tokens)
-# print(sentences)
 
 
 def the_xgrams4(n_choice):
@@ -195,6 +162,37 @@ def perplexity(methods, n_choice):
 
 
 if __name__ == "__main__":
+    df = pd.read_csv("final_merge.csv")
+
+    print("Initial dataset size:", len(df))
+    df = remove_duplicates(df)
+    print("After removing duplicates:", len(df))
+
+    df = filter_ascii_methods(df)
+    print("After filtering ASCII methods:", len(df))
+
+    df = remove_outliers(df)
+    print("After removing outliers:", len(df))
+
+    df = remove_boilerplate_methods(df)
+    print("After removing boilerplate methods:", len(df))
+
+    df = remove_comments_from_dataframe(df, "Method Code", "Java")
+    print("After cleaning comments:", len(df))
+
+    # print(df["Method Code"])
+    methods = df["Method Code"]
+
+    sentences = []
+    for method in methods:
+        lexer = JavaLexer()
+
+        tokens = ['<s>'] + [t[1] for t in lexer.get_tokens(method) if ' ' not in t[1]] + ['</s>']
+        # print(tokens)
+        # print(len(tokens))
+        sentences.append(tokens)
+    # print(sentences)
+    
     train_sentences, test_sentences = train_test_split(sentences, test_size=0.2, random_state=42)
     train_sentences, val_sentences = train_test_split(train_sentences, test_size=0.2, random_state=42)
     print(f"number of training methods: {len(train_sentences)}")
