@@ -173,23 +173,23 @@ def continue_method(the_tokens, n, max_length):
     print(the_tokens)
 
 
-def perplexity(n_choice):
+def perplexity(methods, n_choice):
     total_log_prob = 0
-    total_words = 0
+    total_tokens = 0
 
-    for sentence in test_sentences:
-        for ix in range(n_choice-1, len(sentence)):
-            context = sentence[ix-(n_choice-1):ix]
-            word = sentence[ix]
+    for method in methods:
+        for ix in range(n_choice-1, len(method)):
+            context = method[ix-(n_choice-1):ix]
+            token = method[ix]
 
-            probability = find_word_prob(context, word)
+            probability = find_word_prob(context, token)
             # print(f"given {context} and {word}, the probability is {probability}")
             if probability > 0:
                 total_log_prob += math.log2(probability)
             else:
                 total_log_prob += math.log2(1e-10)  # prevent log(0) blowing up
-            total_words += 1
-    avg_log_prob = total_log_prob / total_words
+            total_tokens += 1
+    avg_log_prob = total_log_prob / total_tokens
     return 2 ** (-avg_log_prob)
 
 
@@ -201,12 +201,20 @@ if __name__ == "__main__":
     print(f"number of test methods: {len(test_sentences)}")
 
     # compare ngram models
+    # n_choice_model = {}
     n_choice_perplexity = {}
+
     max_ngram = 15  # edit this value
 
     for n_choice in range(2, max_ngram+1):
         the_xgrammys4 = {}
+        print(f"Training {n_choice}-gram model...")
         the_xgrams4(n_choice)
-        n_choice_perplexity[n_choice] = perplexity(n_choice)
+        print(f"Evaluating {n_choice}-gram model...")
+        n_choice_perplexity[n_choice] = perplexity(test_sentences, n_choice)
         print(f"For {n_choice}-gram model, the perplexity is {n_choice_perplexity[n_choice]}")
-    print(f"The best performing model is the {min(n_choice_perplexity, key=n_choice_perplexity.get)}-gram model with a {min(n_choice_perplexity.values())} perplexity")
+    best_performer = min(n_choice_perplexity, key=n_choice_perplexity.get)
+    print(f"The best performing model is the {best_performer}-gram model with a {min(n_choice_perplexity.values())} perplexity")
+    print("Validating best-perfoming model...")
+    the_xgrams4(best_performer)
+    print(f"For best-performing model, the perplexity was validated at {perplexity(val_sentences, best_performer)}")
