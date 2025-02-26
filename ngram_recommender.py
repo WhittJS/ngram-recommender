@@ -91,7 +91,7 @@ print("After removing boilerplate methods:", len(df))
 df = remove_comments_from_dataframe(df, "Method Code", "Java")
 print("After cleaning comments:", len(df))
 
-print(df["Method Code"])
+# print(df["Method Code"])
 methods = df["Method Code"]
 
 sentences = []
@@ -202,7 +202,7 @@ if __name__ == "__main__":
 
     # compare ngram models
     n_choice_perplexity = {}
-    max_ngram = 16  # edit this value
+    max_ngram = 15  # edit this value
 
     for n_choice in range(3, max_ngram+1):
         the_xgrammys4 = {}
