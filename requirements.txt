@@ -1,5 +1,6 @@
 javalang==0.13.0
 pandas==2.2.3
-pydriller==2.7
+PyDriller==2.7
 Pygments==2.19.1
 scikit_learn==1.6.1
+tqdm==4.67.1
