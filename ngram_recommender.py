@@ -204,7 +204,7 @@ if __name__ == "__main__":
     n_choice_perplexity = {}
     max_ngram = 16  # edit this value
 
-    for n_choice in range(3, max_ngram):
+    for n_choice in range(3, max_ngram+1):
         the_xgrammys4 = {}
         the_xgrams4(n_choice)
         n_choice_perplexity[n_choice] = perplexity(n_choice)
