@@ -6,9 +6,10 @@ from pygments.token import Token
 from sklearn.model_selection import train_test_split
 from collections import Counter
 import math
+from tqdm import tqdm
 
 
-df = pd.read_csv("extracted_java_methods-pyDriller.csv")
+df = pd.read_csv("final_merge.csv")
 
 
 # Type 1 Clones #
@@ -177,7 +178,7 @@ def perplexity(methods, n_choice):
     total_log_prob = 0
     total_tokens = 0
 
-    for method in methods:
+    for method in tqdm(methods):
         for ix in range(n_choice-1, len(method)):
             context = method[ix-(n_choice-1):ix]
             token = method[ix]
