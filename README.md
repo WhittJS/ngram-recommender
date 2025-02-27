@@ -3,7 +3,7 @@
 How to Run ngram_recommender:
 1. Install [python](https://www.python.org/downloads/) locally
 2. `pip install -r requirements.txt` to install the required packages
-3. `python ngram_recommender.py`
+3. `python ngram_recommender.py <input txt file name (optional, defaults to data in repo)>`
 
 What do we need :)
 - Preprocessor code

@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from collections import Counter
 import math
 from tqdm import tqdm
+import sys
 
 
 # Type 1 Clones #
@@ -186,7 +187,24 @@ def preprocess(df):
 
 
 if __name__ == "__main__":
-    df = pd.concat([pd.read_csv("output_1.csv"),pd.read_csv("output_2.csv")],ignore_index=True)
+
+
+    if len(sys.argv) > 1:
+        try:
+            with open(sys.argv[1],'r') as file:
+                list = []
+                for i in file.readlines():
+                    list.append(i)
+                df = pd.DataFrame(list)
+                df.columns = ['Method Code']
+        except:
+            print('Invalid file name.')
+            sys.exit()
+
+    else:
+        df = pd.concat([pd.read_csv("output_1.csv"),pd.read_csv("output_2.csv")],ignore_index=True)
+
+    
 
     methods = preprocess(df)
 
