@@ -181,7 +181,7 @@ def preprocess(df):
     print("After cleaning comments:", len(df))
 
     # print(df["Method Code"])
-    methods = df["Method Code"]
+    methods = df["Method Code No Comments"]
     return methods
 
 
@@ -206,13 +206,14 @@ if __name__ == "__main__":
     print(f"number of validation methods: {len(val_sentences)}")
     print(f"number of test methods: {len(test_sentences)}")
 
-    # compare ngram models
     n_choice_model = {}
     n_choice_perplexity = {}
 
-    max_ngram = 15  # edit this value
+    # edit these values
+    min_ngram = 4
+    max_ngram = 15
 
-    for n_choice in range(4, max_ngram+1):
+    for n_choice in range(min_ngram, max_ngram+1):
         print(f"Training {n_choice}-gram model...")
         model = the_xgrams4(n_choice)
         n_choice_model[n_choice] = model
@@ -222,5 +223,4 @@ if __name__ == "__main__":
     best_performer = min(n_choice_perplexity, key=n_choice_perplexity.get)
     print(f"The best performing model is the {best_performer}-gram model with a {min(n_choice_perplexity.values())} perplexity")
     print("Validating best-perfoming model...")
-    the_xgrams4(best_performer)
-    print(f"For best-performing model ({best_performer}-gram), the perplexity was validated at {perplexity(val_sentences, best_performer)}")
+    print(f"For best-performing model ({best_performer}-gram), the perplexity was validated at {perplexity(val_sentences, best_performer, n_choice_model[best_performer])}")
