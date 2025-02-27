@@ -162,7 +162,7 @@ def perplexity(methods, n_choice):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("final_merge.csv")
+    df = pd.concat([pd.read_csv("output_1.csv"),pd.read_csv("output_2.csv")],ignore_index=True)
 
     print("Initial dataset size:", len(df))
     df = remove_duplicates(df)
