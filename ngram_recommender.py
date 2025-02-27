@@ -201,7 +201,7 @@ if __name__ == "__main__":
     # print(sentences)
 
     train_sentences, test_sentences = train_test_split(sentences, test_size=0.2, random_state=42)
-    train_sentences, val_sentences = train_test_split(train_sentences, test_size=0.2, random_state=42)
+    train_sentences, val_sentences = train_test_split(train_sentences, test_size=0.25, random_state=42)
     print(f"number of training methods: {len(train_sentences)}")
     print(f"number of validation methods: {len(val_sentences)}")
     print(f"number of test methods: {len(test_sentences)}")
