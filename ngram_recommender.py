@@ -186,7 +186,7 @@ def preprocess(df):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("final_merge.csv")
+    df = pd.concat([pd.read_csv("output_1.csv"),pd.read_csv("output_2.csv")],ignore_index=True)
 
     methods = preprocess(df)
 

@@ -6,7 +6,7 @@ import os
 from javalang.parse import parse
 from javalang.tree import MethodDeclaration
 import csv
-
+import shutil
 
 
 
@@ -93,7 +93,7 @@ def extract_methods_to_csv(repo_path, output_csv):
     """
     with open(output_csv, mode='w', newline='', encoding='utf-8') as csvfile:
         csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(["Branch Name", "Method Number", "Commit Hash", "File Name", "Method Name", "Method Code", "Commit Link"])
+        csv_writer.writerow(["Method Code"])
 
         branch_name = "master"
         counter = 0
@@ -105,36 +105,37 @@ def extract_methods_to_csv(repo_path, output_csv):
 
                     for method_name, method_code in methods:
                         counter += 1
-                        
+                        if counter > 250000:
+                            pass
                         commit_link = f"{repo_path}/commit/{commit.hash}"
-                        csv_writer.writerow([branch_name, counter, commit.hash, modified_file.filename, method_name, method_code, commit_link])
+                        csv_writer.writerow([method_code])
 
                     #print(f"Extracted methods from {modified_file.filename} in commit {commit.hash}")
+            if counter > 250000:
+                pass    
 
 
 if __name__ == "__main__":
 
-    #python pydriller.py <input csv filename/path> <output csv path> <desired copy folder (optional)>
-
-    if len(sys.argv) < 1:
-        print('Useage: pydriller.py <input csv filename/path> <desired copy folder name (optional)>')
+    
+    if len(sys.argv) < 2:
+        print('Useage: pydriller.py <input csv filename/path> <output csv file name>')
         sys.exit()
 
-    
 
-    folder_name = '\\'
     base_path = os.getcwd() + '\\'
 
     input_csv = base_path + sys.argv[1]
-    if len(sys.argv) > 2:
-        folder_name += sys.argv[2]
+
+    output_csv = base_path+sys.argv[2]
+
 
     if not os.path.exists(input_csv):
         print('Invalid Input csv filename! :(')
         sys.exit()
 
-    if not os.path.exists(base_path + folder_name):
-        os.makedirs(base_path + folder_name)
+    if not os.path.exists(base_path + 'temp'):
+        os.makedirs(base_path + 'temp')
 
     df_res = pd.read_csv(input_csv)
 
@@ -142,23 +143,29 @@ if __name__ == "__main__":
     for idx,row in df_res.iterrows():
         repoList.append("https://www.github.com/{}".format(row['name']))
 
+    csv_list = []
+
     for repo in repoList:
 
         fileNameToSave = ''.join(repo.split('github.com')[1:])
         fileNameToSave = fileNameToSave.replace('/','_')
 
         # Specify the path to the output CSV file
-        output_csv_file = (base_path + folder_name).replace('\\\\','\\') + "\\extracted_methods_{}.csv".format(fileNameToSave)
+        output_csv_file = (base_path + 'temp') + "\\extracted_methods_{}.csv".format(fileNameToSave)
 
         # Run the extraction
         try:
             if not os.path.exists(output_csv_file):
                 extract_methods_to_csv(repo, output_csv_file)
+                csv_list.append(pd.read_csv(output_csv_file))
+                print(repo)
         except:
             print('Bad Commit - skipping repo')
             os.remove(output_csv_file)
+            print(repo)
         
-        print(repo)
+pd.concat(csv_list,ignore_index=True).to_csv(output_csv)
+shutil.rmtree(base_path + 'temp')
 
 
 
