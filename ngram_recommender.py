@@ -73,7 +73,8 @@ def remove_comments_from_dataframe(df: pd.DataFrame, method_column: str, languag
     return df
 
 
-def the_xgrams4(n_choice):
+def the_xgrams4(n_choice) -> dict:
+    the_xgrammys4 = {}
     for sentence in train_sentences:
         words = [word for word in sentence]
         for ix in range(n_choice-1, len(words)):
@@ -100,12 +101,13 @@ def the_xgrams4(n_choice):
 
                 the_xgrammys4[list_key] = []
                 the_xgrammys4[list_key].append(words[ix])
+    return the_xgrammys4
 
 
-def find_most_prob_word(token_list):
+def find_most_prob_word(token_list, model: dict):
     list_key = tuple(token_list)
     try:
-        possible_words = the_xgrammys4[list_key]
+        possible_words = model[list_key]
         # print(possible_words)
         c = Counter(possible_words)
         sum = c.total()
@@ -119,10 +121,10 @@ def find_most_prob_word(token_list):
         return "NA", 0
 
 
-def find_word_prob(token_list, word):
+def find_word_prob(token_list, word, model: dict):
     list_key = tuple(token_list)
     try:
-        possible_words = the_xgrammys4[list_key]
+        possible_words = model[list_key]
         # print(possible_words)
         c = Counter(possible_words)
         sum = c.total()
@@ -141,7 +143,7 @@ def continue_method(the_tokens, n, max_length):
     print(the_tokens)
 
 
-def perplexity(methods, n_choice):
+def perplexity(methods, n_choice, model: dict):
     total_log_prob = 0
     total_tokens = 0
 
@@ -150,7 +152,7 @@ def perplexity(methods, n_choice):
             context = method[ix-(n_choice-1):ix]
             token = method[ix]
 
-            probability = find_word_prob(context, token)
+            probability = find_word_prob(context, token, model)
             # print(f"given {context} and {word}, the probability is {probability}")
             if probability > 0:
                 total_log_prob += math.log2(probability)
@@ -161,9 +163,7 @@ def perplexity(methods, n_choice):
     return 2 ** (-avg_log_prob)
 
 
-if __name__ == "__main__":
-    df = pd.read_csv("final_merge.csv")
-
+def preprocess(df):
     print("Initial dataset size:", len(df))
     df = remove_duplicates(df)
     print("After removing duplicates:", len(df))
@@ -182,6 +182,13 @@ if __name__ == "__main__":
 
     # print(df["Method Code"])
     methods = df["Method Code"]
+    return methods
+
+
+if __name__ == "__main__":
+    df = pd.read_csv("final_merge.csv")
+
+    methods = preprocess(df)
 
     sentences = []
     for method in methods:
@@ -192,7 +199,7 @@ if __name__ == "__main__":
         # print(len(tokens))
         sentences.append(tokens)
     # print(sentences)
-    
+
     train_sentences, test_sentences = train_test_split(sentences, test_size=0.2, random_state=42)
     train_sentences, val_sentences = train_test_split(train_sentences, test_size=0.2, random_state=42)
     print(f"number of training methods: {len(train_sentences)}")
@@ -200,17 +207,17 @@ if __name__ == "__main__":
     print(f"number of test methods: {len(test_sentences)}")
 
     # compare ngram models
-    # n_choice_model = {}
+    n_choice_model = {}
     n_choice_perplexity = {}
 
     max_ngram = 15  # edit this value
 
-    for n_choice in range(2, max_ngram+1):
-        the_xgrammys4 = {}
+    for n_choice in range(4, max_ngram+1):
         print(f"Training {n_choice}-gram model...")
-        the_xgrams4(n_choice)
+        model = the_xgrams4(n_choice)
+        n_choice_model[n_choice] = model
         print(f"Evaluating {n_choice}-gram model...")
-        n_choice_perplexity[n_choice] = perplexity(test_sentences, n_choice)
+        n_choice_perplexity[n_choice] = perplexity(test_sentences, n_choice, model)
         print(f"For {n_choice}-gram model, the perplexity is {n_choice_perplexity[n_choice]}")
     best_performer = min(n_choice_perplexity, key=n_choice_perplexity.get)
     print(f"The best performing model is the {best_performer}-gram model with a {min(n_choice_perplexity.values())} perplexity")
