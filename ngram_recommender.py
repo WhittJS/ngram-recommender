@@ -141,7 +141,6 @@ def continue_method(the_tokens, n, max_length, model):
         next_token = find_most_prob_word(the_tokens[-n:], model)
         # print(next_token)
         if next_token[0] == "NA":
-            the_tokens.append(())
             break
         the_tokens.append(next_token)
     return(the_tokens)
@@ -204,6 +203,26 @@ def output_json(test_sentences, n_choice_model, best_performer, filename):
         file.write('}\n')
 
 
+def train_test_model(train_sentences, test_sentences, val_sentences):
+    n_choice_model = {}
+    n_choice_perplexity = {}
+
+    # edit these values
+    min_ngram = 3
+    max_ngram = 12
+
+    for n_choice in range(min_ngram, max_ngram+1):
+        print(f"Training {n_choice}-gram model...")
+        n_choice_model[n_choice] = the_xgrams4(n_choice, train_sentences)
+        print(f"Evaluating {n_choice}-gram model...")
+        n_choice_perplexity[n_choice] = perplexity(test_sentences, n_choice, n_choice_model[n_choice])
+        print(f"For {n_choice}-gram model, the perplexity is {n_choice_perplexity[n_choice]}")
+    best_performer = min(n_choice_perplexity, key=n_choice_perplexity.get)
+    print(f"The best performing model is the {best_performer}-gram model with a {min(n_choice_perplexity.values())} perplexity")
+    print("Validating best-perfoming model...")
+    print(f"For best-performing model ({best_performer}-gram), the perplexity was validated at {perplexity(val_sentences, best_performer, n_choice_model[best_performer])}")
+    return n_choice_model,best_performer
+
 if __name__ == "__main__":
 
     # if len(sys.argv) > 1:
@@ -253,22 +272,16 @@ if __name__ == "__main__":
     print(f"number of validation methods: {len(val_sentences)}")
     print(f"number of test methods: {len(test_sentences)}")
 
-    n_choice_model = {}
-    n_choice_perplexity = {}
+    # print("Training model on our dataset...")
+    # n_choice_model, best_performer = train_test_model(train_sentences, test_sentences, val_sentences)
 
-    # edit these values
-    min_ngram = 3
-    max_ngram = 12
+    # output_json(test_sentences, n_choice_model, best_performer, 'results_student_model.json')
 
-    for n_choice in range(min_ngram, max_ngram+1):
-        print(f"Training {n_choice}-gram model...")
-        n_choice_model[n_choice] = the_xgrams4(n_choice, train_sentences)
-        print(f"Evaluating {n_choice}-gram model...")
-        n_choice_perplexity[n_choice] = perplexity(test_sentences, n_choice, n_choice_model[n_choice])
-        print(f"For {n_choice}-gram model, the perplexity is {n_choice_perplexity[n_choice]}")
-    best_performer = min(n_choice_perplexity, key=n_choice_perplexity.get)
-    print(f"The best performing model is the {best_performer}-gram model with a {min(n_choice_perplexity.values())} perplexity")
-    print("Validating best-perfoming model...")
-    print(f"For best-performing model ({best_performer}-gram), the perplexity was validated at {perplexity(val_sentences, best_performer, n_choice_model[best_performer])}")
+    prof_train_sentences = []
+    for method in prof_df["Method Code"]:
+        prof_train_sentences.append(['<s>'] + method.split() + ['</s>'])
 
-    output_json(test_sentences, n_choice_model, best_performer, 'results_student_model.json')
+    print("Training model on prof dataset...")
+    n_choice_model, best_performer = train_test_model(prof_train_sentences, test_sentences, val_sentences)
+
+    output_json(test_sentences, n_choice_model, best_performer, 'results_teacher_model.json')
