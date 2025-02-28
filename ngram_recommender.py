@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from collections import Counter
 import math
 from tqdm import tqdm
-import sys
+import random
 
 
 # Type 1 Clones #
@@ -74,9 +74,9 @@ def remove_comments_from_dataframe(df: pd.DataFrame, method_column: str, languag
     return df
 
 
-def the_xgrams4(n_choice) -> dict:
+def the_xgrams4(n_choice, training_corpus) -> dict:
     the_xgrammys4 = {}
-    for sentence in train_sentences:
+    for sentence in training_corpus:
         words = [word for word in sentence]
         for ix in range(n_choice-1, len(words)):
             try:
@@ -116,10 +116,10 @@ def find_most_prob_word(token_list, model: dict):
         word = most_common_word[0][0]
         common_count = most_common_word[0][1]
         # returns most probable word and probability
-        return word, common_count/sum
+        return (word, f"{common_count/sum:.1f}")
     except KeyError:
-        print("not found")
-        return "NA", 0
+        # print("not found")
+        return ("NA", 0)
 
 
 def find_word_prob(token_list, word, model: dict):
@@ -135,13 +135,16 @@ def find_word_prob(token_list, word, model: dict):
         return 0
 
 
-def continue_method(the_tokens, n, max_length):
+def continue_method(the_tokens, n, max_length, model):
     n = n-1
-    for i in range(max_length):
-        next_token = find_most_prob_word(the_tokens[-n:])
-        print(next_token)
-        the_tokens.append(next_token[0])
-    print(the_tokens)
+    for _ in range(max_length):
+        next_token = find_most_prob_word(the_tokens[-n:], model)
+        # print(next_token)
+        if next_token[0] == "NA":
+            the_tokens.append(())
+            break
+        the_tokens.append(next_token)
+    return(the_tokens)
 
 
 def perplexity(methods, n_choice, model: dict):
@@ -186,30 +189,56 @@ def preprocess(df):
     return methods
 
 
+def output_json(test_sentences, n_choice_model, best_performer, filename):
+    print("Creating json file...")
+    random.seed(42)
+    json_test_samples = random.sample(test_sentences, 100)
+    predicted_methods = []
+    for method in tqdm(json_test_samples):
+        predicted_methods.append(continue_method(method[0:best_performer], best_performer, len(method), n_choice_model[best_performer])[best_performer:])
+    with open(filename, 'w', encoding='utf-8') as file:
+        file.write('{\n')
+        for i, value in enumerate(predicted_methods):
+            comma = ',' if i < len(predicted_methods) - 1 else ''
+            file.write(f'    "{i}": {value}{comma}\n')
+        file.write('}\n')
+
+
 if __name__ == "__main__":
 
+    # if len(sys.argv) > 1:
+    #     try:
+    #         with open(sys.argv[1],'r') as file:
+    #             list = []
+    #             for i in file.readlines():
+    #                 list.append(i)
+    #             our_df = pd.DataFrame(list)
+    #             our_df.columns = ['Method Code']
+    #     except:
+    #         print('Invalid file name.')
+    #         sys.exit()
 
-    if len(sys.argv) > 1:
-        try:
-            with open(sys.argv[1],'r') as file:
-                list = []
-                for i in file.readlines():
-                    list.append(i)
-                df = pd.DataFrame(list)
-                df.columns = ['Method Code']
-        except:
-            print('Invalid file name.')
-            sys.exit()
+    # else:
+    #     our_df = pd.concat([pd.read_csv("output_1.csv"),pd.read_csv("output_2.csv")],ignore_index=True)
+    print("Reading datasets...")
 
-    else:
-        df = pd.concat([pd.read_csv("output_1.csv"),pd.read_csv("output_2.csv")],ignore_index=True)
-
+    with open('training.txt', 'r') as file:
+        list = []
+        for i in file.readlines():
+            list.append(i)
+        prof_df = pd.DataFrame(list)
+        prof_df.columns = ['Method Code']
     
+    our_df = pd.concat([pd.read_csv("output_1.csv"),pd.read_csv("output_2.csv")],ignore_index=True)
 
-    methods = preprocess(df)
+    print("Datasets read. Preprocessing...")
+
+    methods = preprocess(our_df)
+
+    print("Tokenizing...")
 
     sentences = []
-    for method in methods:
+    for method in tqdm(methods):
         lexer = JavaLexer()
 
         tokens = ['<s>'] + [t[1] for t in lexer.get_tokens(method) if ' ' not in t[1]] + ['</s>']
@@ -218,8 +247,8 @@ if __name__ == "__main__":
         sentences.append(tokens)
     # print(sentences)
 
-    train_sentences, test_sentences = train_test_split(sentences, test_size=0.2, random_state=42)
-    train_sentences, val_sentences = train_test_split(train_sentences, test_size=0.25, random_state=42)
+    train_sentences, test_sentences = train_test_split(sentences, test_size=0.1, random_state=42)
+    train_sentences, val_sentences = train_test_split(train_sentences, test_size=0.1111, random_state=42)
     print(f"number of training methods: {len(train_sentences)}")
     print(f"number of validation methods: {len(val_sentences)}")
     print(f"number of test methods: {len(test_sentences)}")
@@ -228,17 +257,18 @@ if __name__ == "__main__":
     n_choice_perplexity = {}
 
     # edit these values
-    min_ngram = 4
-    max_ngram = 15
+    min_ngram = 3
+    max_ngram = 12
 
     for n_choice in range(min_ngram, max_ngram+1):
         print(f"Training {n_choice}-gram model...")
-        model = the_xgrams4(n_choice)
-        n_choice_model[n_choice] = model
+        n_choice_model[n_choice] = the_xgrams4(n_choice, train_sentences)
         print(f"Evaluating {n_choice}-gram model...")
-        n_choice_perplexity[n_choice] = perplexity(test_sentences, n_choice, model)
+        n_choice_perplexity[n_choice] = perplexity(test_sentences, n_choice, n_choice_model[n_choice])
         print(f"For {n_choice}-gram model, the perplexity is {n_choice_perplexity[n_choice]}")
     best_performer = min(n_choice_perplexity, key=n_choice_perplexity.get)
     print(f"The best performing model is the {best_performer}-gram model with a {min(n_choice_perplexity.values())} perplexity")
     print("Validating best-perfoming model...")
     print(f"For best-performing model ({best_performer}-gram), the perplexity was validated at {perplexity(val_sentences, best_performer, n_choice_model[best_performer])}")
+
+    output_json(test_sentences, n_choice_model, best_performer, 'results_student_model.json')
