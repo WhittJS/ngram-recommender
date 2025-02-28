@@ -272,10 +272,10 @@ if __name__ == "__main__":
     print(f"number of validation methods: {len(val_sentences)}")
     print(f"number of test methods: {len(test_sentences)}")
 
-    # print("Training model on our dataset...")
-    # n_choice_model, best_performer = train_test_model(train_sentences, test_sentences, val_sentences)
+    print("Training model on our dataset...")
+    n_choice_model, best_performer = train_test_model(train_sentences, test_sentences, val_sentences)
 
-    # output_json(test_sentences, n_choice_model, best_performer, 'results_student_model.json')
+    output_json(test_sentences, n_choice_model, best_performer, 'results_student_model.json')
 
     prof_train_sentences = []
     for method in prof_df["Method Code"]:
