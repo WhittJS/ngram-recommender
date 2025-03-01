@@ -8,6 +8,9 @@ from collections import Counter
 import math
 from tqdm import tqdm
 import random
+import pickle
+import os
+import time
 
 
 # Type 1 Clones #
@@ -136,14 +139,16 @@ def find_word_prob(token_list, word, model: dict):
 
 
 def continue_method(the_tokens, n, max_length, model):
+    predicted_tokens = []
     n = n-1
     for _ in range(max_length):
         next_token = find_most_prob_word(the_tokens[-n:], model)
         # print(next_token)
         if next_token[0] == "NA":
             break
-        the_tokens.append(next_token)
-    return(the_tokens)
+        the_tokens.append(next_token[0])
+        predicted_tokens.append((next_token[0], next_token[1]))
+    return(predicted_tokens)
 
 
 def perplexity(methods, n_choice, model: dict):
@@ -188,13 +193,13 @@ def preprocess(df):
     return methods
 
 
-def output_json(test_sentences, n_choice_model, best_performer, filename):
-    print("Creating json file...")
+def output_json(test_sentences, n_choice_model, best_performer_n, filename):
+    print("Generating json output...")
     random.seed(42)
     json_test_samples = random.sample(test_sentences, 100)
     predicted_methods = []
     for method in tqdm(json_test_samples):
-        predicted_methods.append(continue_method(method[0:best_performer], best_performer, len(method), n_choice_model[best_performer])[best_performer:])
+        predicted_methods.append(continue_method(method[0:best_performer_n], best_performer_n, len(method), n_choice_model)[best_performer_n:])
     with open(filename, 'w', encoding='utf-8') as file:
         file.write('{\n')
         for i, value in enumerate(predicted_methods):
@@ -204,41 +209,27 @@ def output_json(test_sentences, n_choice_model, best_performer, filename):
 
 
 def train_test_model(train_sentences, test_sentences, val_sentences):
-    n_choice_model = {}
-    n_choice_perplexity = {}
+    n_choice_model_dict = {}
+    n_choice_perplexity_dict = {}
 
     # edit these values
     min_ngram = 2
-    max_ngram = 12
+    max_ngram = 10
 
     for n_choice in range(min_ngram, max_ngram+1):
         print(f"Training {n_choice}-gram model...")
-        n_choice_model[n_choice] = the_xgrams4(n_choice, train_sentences)
+        n_choice_model_dict[n_choice] = the_xgrams4(n_choice, train_sentences)
         print(f"Evaluating {n_choice}-gram model...")
-        n_choice_perplexity[n_choice] = perplexity(test_sentences, n_choice, n_choice_model[n_choice])
-        print(f"For {n_choice}-gram model, the perplexity is {n_choice_perplexity[n_choice]}")
-    best_performer = min(n_choice_perplexity, key=n_choice_perplexity.get)
-    print(f"The best performing model is the {best_performer}-gram model with a {min(n_choice_perplexity.values())} perplexity")
+        n_choice_perplexity_dict[n_choice] = perplexity(test_sentences, n_choice, n_choice_model_dict[n_choice])
+        print(f"For {n_choice}-gram model, the perplexity is {n_choice_perplexity_dict[n_choice]}")
+    best_performer = min(n_choice_perplexity_dict, key=n_choice_perplexity_dict.get)
+    print(f"The best performing model is the {best_performer}-gram model with a {min(n_choice_perplexity_dict.values())} perplexity")
     print("Validating best-perfoming model...")
-    print(f"For best-performing model ({best_performer}-gram), the perplexity was validated at {perplexity(val_sentences, best_performer, n_choice_model[best_performer])}")
-    return n_choice_model,best_performer
+    print(f"For best-performing model ({best_performer}-gram), the perplexity was validated at {perplexity(val_sentences, best_performer, n_choice_model_dict[best_performer])}")
+    return n_choice_model_dict[best_performer], best_performer
 
 if __name__ == "__main__":
 
-    # if len(sys.argv) > 1:
-    #     try:
-    #         with open(sys.argv[1],'r') as file:
-    #             list = []
-    #             for i in file.readlines():
-    #                 list.append(i)
-    #             our_df = pd.DataFrame(list)
-    #             our_df.columns = ['Method Code']
-    #     except:
-    #         print('Invalid file name.')
-    #         sys.exit()
-
-    # else:
-    #     our_df = pd.concat([pd.read_csv("output_1.csv"),pd.read_csv("output_2.csv")],ignore_index=True)
     print("Reading datasets...")
 
     with open('training.txt', 'r') as file:
@@ -272,16 +263,33 @@ if __name__ == "__main__":
     print(f"number of validation methods: {len(val_sentences)}")
     print(f"number of test methods: {len(test_sentences)}")
 
-    print("Training model on our dataset...")
-    n_choice_model, best_performer = train_test_model(train_sentences, test_sentences, val_sentences)
+    if os.path.isfile("student_model.pkl"):
+        print("Student model found! If you want to train a new model, delete student_model.pkl and re-run.")
+        time.sleep(3)
+        with open("student_model.pkl", "rb") as file:
+            best_performer_model = pickle.load(file)
+        best_performer_n = len(next(iter(best_performer_model.keys())))+1
+    else:
+        print("Model not found. Training new model on our dataset...")
+        best_performer_model, best_performer_n = train_test_model(train_sentences, test_sentences, val_sentences)
+        with open("student_model.pkl", "wb") as file:
+            pickle.dump(best_performer_model, file)
 
-    output_json(test_sentences, n_choice_model, best_performer, 'results_student_model.json')
+    output_json(test_sentences, best_performer_model, best_performer_n, 'results_student_model.json')
 
-    prof_train_sentences = []
-    for method in prof_df["Method Code"]:
-        prof_train_sentences.append(['<s>'] + method.split() + ['</s>'])
+    if os.path.isfile("teacher_model.pkl"):
+        print("Teacher model found! If you want to train a new model, delete teacher_model.pkl and re-run.")
+        time.sleep(3)
+        with open("teacher_model.pkl", "rb") as file:
+            best_performer_model = pickle.load(file)
+        best_performer_n = len(next(iter(best_performer_model.keys())))+1
+    else:
+        prof_train_sentences = []
+        for method in prof_df["Method Code"]:
+            prof_train_sentences.append(['<s>'] + method.split() + ['</s>'])
+        print("Model not found. Training model on teacher dataset...")
+        best_performer_model, best_performer_n = train_test_model(prof_train_sentences, test_sentences, val_sentences)
+        with open("teacher_model.pkl", "wb") as file:
+            pickle.dump(best_performer_model, file)
 
-    print("Training model on prof dataset...")
-    n_choice_model, best_performer = train_test_model(prof_train_sentences, test_sentences, val_sentences)
-
-    output_json(test_sentences, n_choice_model, best_performer, 'results_teacher_model.json')
+    output_json(test_sentences, best_performer_model, best_performer_n, 'results_teacher_model.json')
