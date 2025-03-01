@@ -208,7 +208,7 @@ def train_test_model(train_sentences, test_sentences, val_sentences):
     n_choice_perplexity = {}
 
     # edit these values
-    min_ngram = 3
+    min_ngram = 2
     max_ngram = 12
 
     for n_choice in range(min_ngram, max_ngram+1):
