@@ -166,6 +166,15 @@ def repeated_x_times(the_tokens,x):
   else:
     return False
 
+def check_alternating_pairs(the_tokens):
+  if(len(the_tokens)>=4):
+    if(the_tokens[-1]==the_tokens[-3] and the_tokens[-2]==the_tokens[-4]):
+      return True
+    else:
+      return False
+  else:
+    return False
+
 def continue_method(the_tokens, n, max_length, model):
     predicted_tokens = []
     max_repetitions = 5
@@ -175,6 +184,8 @@ def continue_method(the_tokens, n, max_length, model):
         # print(next_token)
         if next_token[0] == "NA":
             break
+        if(check_alternating_pairs(the_tokens)):
+          break
         the_tokens.append(next_token[0])
         if(repeated_x_times(the_tokens,max_repetitions)):
           predicted_tokens.append((next_token[0], next_token[1]))
