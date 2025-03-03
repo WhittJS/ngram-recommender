@@ -1,5 +1,5 @@
 # ngram-recommender
-* The script takes two corpora (`output_1.csv` and `output_2.csv` for the student model and `training.txt` for the teacher model [`output_1.csv` and `output_2.csv` are automatically combined]) of Java methods as input and automatically identifies the best-performing model based on a specific N-value. It then evaluates the selected model on the test set extracted from `output_*.csv`.
+The script takes two corpora (`output_1.csv` and `output_2.csv` for the student model and `training.txt` for the teacher model, `output_1.csv` and `output_2.csv` are automatically combined) of Java methods as input and automatically identifies the best-performing model based on a specific N-value. It then evaluates the selected model on the test set extracted from `output_*.csv`.
 Since the training corpus differs from both the instructor-provided dataset and our own dataset, we store the results in a file named `results_[student/teacher]_model.json` to distinguish them accordingly.
 
 # Installation:
