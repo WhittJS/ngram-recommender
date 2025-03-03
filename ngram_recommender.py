@@ -137,9 +137,38 @@ def find_word_prob(token_list, word, model: dict):
     except KeyError:
         return 0
 
+def too_many_closing_brackets(the_tokens):
+  stack = []
+  for t in the_tokens:
+    if(t=="(" or t=="{" or t=="["):
+      stack.append(t)
+    elif(t==")" or t=="}" or t=="]"):
+      if ((not stack) or ((t == ')' and stack[-1] != '(')) or ((t == '}' and stack[-1] != '{')) or ((t == ']' and stack[-1] != '['))):
+        #a miss match or too many closing
+        return True
+
+      stack.pop()
+  #could be more opening brackets left on stack
+  #but this method just checks if there
+  #are too many closing so the continue method can continue on
+  return False
+
+def repeated_x_times(the_tokens,x):
+  repeating = False
+  if(len(the_tokens)>=x):
+    for i in range(x-1):
+      if(the_tokens[-i-2]==the_tokens[-i-1]):
+          repeating = True
+          if(i==x-2):
+            return True
+      else:
+          repeating = False
+  else:
+    return False
 
 def continue_method(the_tokens, n, max_length, model):
     predicted_tokens = []
+    max_repetitions = 5
     n = n-1
     for _ in range(max_length):
         next_token = find_most_prob_word(the_tokens[-n:], model)
@@ -147,6 +176,11 @@ def continue_method(the_tokens, n, max_length, model):
         if next_token[0] == "NA":
             break
         the_tokens.append(next_token[0])
+        if(repeated_x_times(the_tokens,max_repetitions)):
+          predicted_tokens.append((next_token[0], next_token[1]))
+          break
+        if(too_many_closing_brackets(the_tokens)):
+          break
         predicted_tokens.append((next_token[0], next_token[1]))
     return(predicted_tokens)
 
